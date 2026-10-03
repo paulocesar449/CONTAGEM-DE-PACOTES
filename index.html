@@ -36,7 +36,7 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--ink);outline-of
 <main>
 <h1>Contagem de pacotes</h1>
 <div class="row">
-<input id="in" type="text" inputmode="numeric" pattern="[0-9]*" enterkeyhint="done" autocomplete="off" placeholder="Número do pacote" aria-label="Número do pacote" autofocus>
+<input id="in" type="text" inputmode="decimal" pattern="[0-9.,]*" enterkeyhint="done" autocomplete="off" placeholder="Número do pacote (ex.: 29.1)" aria-label="Número do pacote" autofocus>
 <button id="add" type="button">Adicionar</button>
 </div>
 <div id="msg" role="status"></div>
@@ -46,12 +46,18 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--ink);outline-of
 </main>
 <script>
 (function(){
-var KEY='contagem-pacotes';
-function load(){try{var o=JSON.parse(localStorage.getItem(KEY)||'{}'),r={};Object.keys(o).forEach(function(k){if(/^\d+$/.test(k)&&o[k]>0)r[k]=Math.floor(o[k])});return r}catch(e){return {}}}
+var KEY='contagem-pacotes',BAD='Só é permitido digitar números e um ponto decimal.';
+function load(){try{var o=JSON.parse(localStorage.getItem(KEY)||'{}'),r={};Object.keys(o).forEach(function(k){if(/^\d+(\.\d+)?$/.test(k)&&o[k]>0)r[k]=Math.floor(o[k])});return r}catch(e){return {}}}
 function save(){try{localStorage.setItem(KEY,JSON.stringify(data))}catch(e){}}
 var data=load(),inp=document.getElementById('in'),list=document.getElementById('list'),msg=document.getElementById('msg');
-function norm(s){return s.replace(/^0+(?=\d)/,'')}
-function cmp(a,b){return a.length!==b.length?a.length-b.length:(a<b?-1:a>b?1:0)}
+// mantém só dígitos e no máximo um separador decimal (vírgula vira ponto)
+function clean(s){var o='',dot=false;for(var i=0;i<s.length;i++){var c=s[i];if(c>='0'&&c<='9')o+=c;else if((c==='.'||c===',')&&!dot){o+='.';dot=true}}return o}
+// "029.10" -> "29.1", ".5" -> "0.5", "29." -> "29"
+function norm(v){var p=v.split('.'),i=(p[0]||'').replace(/^0+(?=\d)/,'')||'0',d=(p[1]||'').replace(/0+$/,'');return d?i+'.'+d:i}
+function cmp(a,b){var x=a.split('.'),y=b.split('.');
+ if(x[0].length!==y[0].length)return x[0].length-y[0].length;
+ if(x[0]!==y[0])return x[0]<y[0]?-1:1;
+ var p=x[1]||'',q=y[1]||'';return p<q?-1:p>q?1:0}
 function render(){
  save();
  var keys=Object.keys(data).sort(cmp),t=0;list.innerHTML='';
@@ -68,17 +74,18 @@ function render(){
  document.getElementById('sub').textContent=t===1?'pacote inserido':'pacotes inseridos';
  if(!keys.length)list.innerHTML='<div class="empty">Digite um número e toque em Adicionar.</div>';
 }
-// bloqueia qualquer caractere que não seja dígito (digitado, colado ou arrastado)
+// bloqueia letras e símbolos (digitados, colados ou arrastados)
 inp.addEventListener('beforeinput',function(e){
- if(e.data&&/\D/.test(e.data)){e.preventDefault();msg.textContent='Só é permitido digitar números.'}
+ if(e.data&&/[^0-9.,]/.test(e.data)){e.preventDefault();msg.textContent=BAD}
 });
 inp.addEventListener('input',function(){
- var c=inp.value.replace(/\D/g,'');
- if(c!==inp.value){inp.value=c;msg.textContent='Só é permitido digitar números.'}else if(msg.textContent==='Só é permitido digitar números.'){msg.textContent=''}
+ var v=inp.value,c=clean(v);
+ if(c!==v){inp.value=c;if(v.replace(/,/g,'.')!==c)msg.textContent=BAD}
+ else if(msg.textContent===BAD)msg.textContent='';
 });
 function add(){
- var v=inp.value.replace(/\D/g,'');
- if(!v){msg.textContent='Digite um número para adicionar.';inp.value='';inp.focus();return}
+ var v=clean(inp.value);
+ if(!/\d/.test(v)){msg.textContent='Digite um número para adicionar.';inp.value='';inp.focus();return}
  var k=norm(v);
  data[k]=(data[k]||0)+1;
  msg.textContent=data[k]>1?'Número '+k+' repetido: já são '+data[k]+' pacotes.':'';
