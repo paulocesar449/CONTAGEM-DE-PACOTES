@@ -46,10 +46,14 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--ink);outline-of
 </main>
 <script>
 (function(){
-var data={},inp=document.getElementById('in'),list=document.getElementById('list'),msg=document.getElementById('msg');
+var KEY='contagem-pacotes';
+function load(){try{var o=JSON.parse(localStorage.getItem(KEY)||'{}'),r={};Object.keys(o).forEach(function(k){if(/^\d+$/.test(k)&&o[k]>0)r[k]=Math.floor(o[k])});return r}catch(e){return {}}}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(data))}catch(e){}}
+var data=load(),inp=document.getElementById('in'),list=document.getElementById('list'),msg=document.getElementById('msg');
 function norm(s){return s.replace(/^0+(?=\d)/,'')}
 function cmp(a,b){return a.length!==b.length?a.length-b.length:(a<b?-1:a>b?1:0)}
 function render(){
+ save();
  var keys=Object.keys(data).sort(cmp),t=0;list.innerHTML='';
  keys.forEach(function(k){
   t+=data[k];
