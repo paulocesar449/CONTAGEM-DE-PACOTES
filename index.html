@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Contagem de pacotes</title>
+<style>
+:root{--bg:#fff;--ink:#222;--mute:#777;--line:#ddd;--acc:#d6361f;--btn:#222;--btnink:#fff;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#181818;--ink:#eee;--mute:#999;--line:#383838;--acc:#ff6b57;--btn:#eee;--btnink:#181818}}
+:root[data-theme="dark"]{--bg:#181818;--ink:#eee;--mute:#999;--line:#383838;--acc:#ff6b57;--btn:#eee;--btnink:#181818}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*,*::before,*::after{box-sizing:inherit}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;-webkit-tap-highlight-color:transparent}
+main{max-width:560px;margin:0 auto;padding:20px 16px 40px}
+h1{font-size:1.15rem;margin:0 0 14px}
+.row{display:flex;gap:8px}
+input{flex:1;min-width:0;height:52px;font:inherit;font-size:1.25rem;padding:0 12px;background:transparent;color:var(--ink);border:1px solid var(--line);border-radius:8px}
+button{font:inherit;min-height:44px;padding:0 16px;border:1px solid var(--line);border-radius:8px;background:transparent;color:var(--ink);cursor:pointer;touch-action:manipulation}
+#add{height:52px;padding:0 20px;background:var(--btn);color:var(--btnink);border-color:var(--btn);font-weight:600}
+button:focus-visible,input:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+#msg{min-height:1.5em;margin:8px 0;color:var(--acc);font-size:.9rem}
+.total{margin:4px 0 22px;color:var(--mute)}
+.total b{color:var(--ink);font-size:2.25rem}
+.list{display:grid;grid-template-columns:repeat(3,1fr);gap:22px 10px}
+.item{position:relative;border:1px solid var(--line);border-radius:8px;padding:10px 4px 4px;text-align:center;font-size:1.25rem;overflow-wrap:anywhere}
+.item .n{position:absolute;top:-12px;left:50%;transform:translateX(-50%);background:var(--acc);color:#fff;font-size:.8rem;font-weight:600;padding:1px 8px;border-radius:99px}
+.item .x{display:block;width:100%;min-height:40px;margin-top:2px;padding:0;border:0;color:var(--mute);font-size:.8rem}
+.empty{grid-column:1/-1;color:var(--mute)}
+#clear{width:100%;margin-top:28px;color:var(--mute)}
+@media (min-width:480px){.list{grid-template-columns:repeat(4,1fr)}}
+@media (min-width:640px){main{padding-top:40px}.list{grid-template-columns:repeat(5,1fr)}#clear{width:auto}}
+</style>
+</head>
+<body>
+<main>
+<h1>Contagem de pacotes</h1>
+<div class="row">
+<input id="in" type="text" inputmode="numeric" pattern="[0-9]*" enterkeyhint="done" autocomplete="off" placeholder="Número do pacote" aria-label="Número do pacote" autofocus>
+<button id="add" type="button">Adicionar</button>
+</div>
+<div id="msg" role="status"></div>
+<div class="total"><b id="total">0</b> <span id="sub">pacotes inseridos</span></div>
+<div class="list" id="list"></div>
+<button id="clear" type="button">Limpar tudo</button>
+</main>
+<script>
+(function(){
+var data={},inp=document.getElementById('in'),list=document.getElementById('list'),msg=document.getElementById('msg');
+function norm(s){return s.replace(/^0+(?=\d)/,'')}
+function cmp(a,b){return a.length!==b.length?a.length-b.length:(a<b?-1:a>b?1:0)}
+function render(){
+ var keys=Object.keys(data).sort(cmp),t=0;list.innerHTML='';
+ keys.forEach(function(k){
+  t+=data[k];
+  var d=document.createElement('div');d.className='item';
+  if(data[k]>1){var n=document.createElement('span');n.className='n';n.textContent='×'+data[k];d.appendChild(n)}
+  d.appendChild(document.createTextNode(k));
+  var x=document.createElement('button');x.type='button';x.className='x';x.textContent='remover 1';
+  x.setAttribute('aria-label','Remover um pacote de número '+k);
+  x.onclick=function(){if(--data[k]<=0)delete data[k];msg.textContent='';render()};
+  d.appendChild(x);list.appendChild(d)});
+ document.getElementById('total').textContent=t;
+ document.getElementById('sub').textContent=t===1?'pacote inserido':'pacotes inseridos';
+ if(!keys.length)list.innerHTML='<div class="empty">Digite um número e toque em Adicionar.</div>';
+}
+// bloqueia qualquer caractere que não seja dígito (digitado, colado ou arrastado)
+inp.addEventListener('beforeinput',function(e){
+ if(e.data&&/\D/.test(e.data)){e.preventDefault();msg.textContent='Só é permitido digitar números.'}
+});
+inp.addEventListener('input',function(){
+ var c=inp.value.replace(/\D/g,'');
+ if(c!==inp.value){inp.value=c;msg.textContent='Só é permitido digitar números.'}else if(msg.textContent==='Só é permitido digitar números.'){msg.textContent=''}
+});
+function add(){
+ var v=inp.value.replace(/\D/g,'');
+ if(!v){msg.textContent='Digite um número para adicionar.';inp.value='';inp.focus();return}
+ var k=norm(v);
+ data[k]=(data[k]||0)+1;
+ msg.textContent=data[k]>1?'Número '+k+' repetido: já são '+data[k]+' pacotes.':'';
+ inp.value='';inp.focus();render();
+}
+inp.addEventListener('keydown',function(e){if(e.key==='Enter'){e.preventDefault();add()}});
+document.getElementById('add').onclick=add;
+document.getElementById('clear').onclick=function(){if(Object.keys(data).length&&!confirm('Apagar todos os pacotes?'))return;data={};msg.textContent='';render();inp.focus()};
+render();
+})();
+</script>
+</body>
+</html>
