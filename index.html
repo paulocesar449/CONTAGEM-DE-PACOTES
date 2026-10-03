@@ -22,21 +22,21 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--ink);outline-of
 #msg{min-height:1.5em;margin:8px 0;color:var(--acc);font-size:.9rem}
 .total{margin:4px 0 22px;color:var(--mute)}
 .total b{color:var(--ink);font-size:2.25rem}
-.list{display:grid;grid-template-columns:repeat(3,1fr);gap:22px 10px}
-.item{position:relative;border:1px solid var(--line);border-radius:8px;padding:10px 4px 4px;text-align:center;font-size:1.25rem;overflow-wrap:anywhere}
+.list{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:22px 6px}
+.item{position:relative;border:1px solid var(--line);border-radius:8px;padding:10px 2px 2px;text-align:center;font-size:1.05rem;overflow-wrap:anywhere}
 .item .n{position:absolute;top:-12px;left:50%;transform:translateX(-50%);background:var(--acc);color:#fff;font-size:.8rem;font-weight:600;padding:1px 8px;border-radius:99px}
 .item .x{display:block;width:100%;min-height:40px;margin-top:2px;padding:0;border:0;color:var(--mute);font-size:.8rem}
 .empty{grid-column:1/-1;color:var(--mute)}
 #clear{width:100%;margin-top:28px;color:var(--mute)}
-@media (min-width:480px){.list{grid-template-columns:repeat(4,1fr)}}
-@media (min-width:640px){main{padding-top:40px}.list{grid-template-columns:repeat(5,1fr)}#clear{width:auto}}
+@media (min-width:480px){.list{gap:22px 10px}.item{font-size:1.25rem}}
+@media (min-width:640px){main{padding-top:40px}#clear{width:auto}}
 </style>
 </head>
 <body>
 <main>
 <h1>Contagem de pacotes</h1>
 <div class="row">
-<input id="in" type="text" inputmode="decimal" pattern="[0-9.,]*" enterkeyhint="done" autocomplete="off" placeholder="Número do pacote" aria-label="Número do pacote" autofocus>
+<input id="in" type="text" inputmode="decimal" pattern="[0-9.,]*" enterkeyhint="done" autocomplete="off" placeholder="Número do pacote (ex.: 29.1)" aria-label="Número do pacote" autofocus>
 <button id="add" type="button">Adicionar</button>
 </div>
 <div id="msg" role="status"></div>
@@ -66,7 +66,7 @@ function render(){
   var d=document.createElement('div');d.className='item';
   if(data[k]>1){var n=document.createElement('span');n.className='n';n.textContent='×'+data[k];d.appendChild(n)}
   d.appendChild(document.createTextNode(k));
-  var x=document.createElement('button');x.type='button';x.className='x';x.textContent='remover 1';
+  var x=document.createElement('button');x.type='button';x.className='x';x.textContent='−1';
   x.setAttribute('aria-label','Remover um pacote de número '+k);
   x.onclick=function(){if(--data[k]<=0)delete data[k];msg.textContent='';render()};
   d.appendChild(x);list.appendChild(d)});
